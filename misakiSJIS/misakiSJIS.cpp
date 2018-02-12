@@ -1,6 +1,8 @@
 // 
-// 美咲フォントドライバ v1.0 by たま吉さん 2018/01/31
+// 美咲フォントドライバ v1.1 by たま吉さん 2018/02/12
 // 内部フラッシュメモリバージョン
+// 
+// 修正 2018/02/12,Arduino Uno(AVR)でのchar符号付き挙動の弊害対応
 //
 
 #include <avr/pgmspace.h>
@@ -9,7 +11,7 @@
 #include "misakiSJISFontData.h"
 
 // 全角判定
-inline uint8_t isZenkaku(char c){
+inline uint8_t isZenkaku(uint8_t c){
    return (((c>=0x81)&&(c<=0x9f))||((c>=0xe0)&&(c<=0xfc))) ? 1:0;
 }
 
@@ -30,7 +32,7 @@ byte Sequential_read(uint32_t address, byte* rcvdata, byte n)  {
 // 戻り値    該当フォントがある場合 フォントコード(0-FTABLESIZE)
 //           該当フォントが無い場合 -1
 
-int16_t findcode(uint16_t  sjiscode)  {
+int16_t findcode(uint16_t sjiscode)  {
  int16_t  t_p = 0;            //　検索範囲上限
  int16_t  e_p = FTABLESIZE-1; //  検索範囲下限
  int16_t  pos;
@@ -38,8 +40,8 @@ int16_t findcode(uint16_t  sjiscode)  {
  uint8_t  flg_stop = 0;
  
  while(true) {
-    pos = t_p + ((e_p - t_p+1)>>1);
-    d = pgm_read_word (ftable+pos);
+   pos = t_p + ((e_p - t_p+1)>>1);
+   d = (uint16_t)pgm_read_word(ftable+pos);
    if (d == sjiscode) {
      // 等しい
      flg_stop = 1;
@@ -96,8 +98,8 @@ uint16_t HantoZen(uint16_t sjis) {
   if (sjis < 0x20 || sjis > 0xdf) 
      return sjis;
   if (sjis < 0xa1)
-    return zentable[sjis-0x20];
-  return zentable[sjis+95-0xa1];
+    return  pgm_read_word(&zentable[sjis-0x20]);
+  return pgm_read_word(&zentable[sjis+95-0xa1]);
 }
 
 // 指定したSJIS文字列の先頭のフォントデータの取得
@@ -107,27 +109,26 @@ uint16_t HantoZen(uint16_t sjis) {
 //   戻り値   : 次の文字列位置、取得失敗の場合NULLを返す
 //
 char* getFontData(byte* fontdata, char *pSJIS, bool h2z) {
-  uint16_t sjis;
+  uint16_t sjis = 0;
 
   if (pSJIS == NULL || *pSJIS == 0) {
     return NULL;
   }
  
-  sjis = *pSJIS;  
-  if ( isZenkaku(*pSJIS) ) {
+  sjis = (uint8_t)*pSJIS;  
+  if ( isZenkaku(sjis) ) {
     sjis<<=8;
     pSJIS++;
     if (*pSJIS == 0) {
       return NULL;
     }
-    sjis += *pSJIS;
+    sjis += (uint8_t)*pSJIS;
   }  
   pSJIS++;
 
   if (h2z) {
     sjis = HantoZen(sjis);
   }
-
   if (false == getFontDataBySJIS(fontdata, sjis)) {
     return NULL;
   }
