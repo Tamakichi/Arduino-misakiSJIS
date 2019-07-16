@@ -89,7 +89,7 @@ Arduino用の美咲フォントドライバライブラリのシフトJISバー�
 該当するフォントが存在ししない場合は-1 を返す.  
 本関数で取得したコードはフォントデータテーブル上の格納順番を示すコードである.  
 フォントの格納アドレスの取得は次の記述で行える.  
-`getFontTableAddress()+findcode(sjis)*8`
+`getFontTableAddress()+findcode(sjis)*7`
 
 ## サンプルスケッチ
 
