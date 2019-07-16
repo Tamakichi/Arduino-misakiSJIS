@@ -8,7 +8,7 @@
 //
 
 #include <avr/pgmspace.h>
-#include <arduino.h>
+#include <Arduino.h>
 #include "misakiSJIS.h"
 #include "misakiSJISFontData.h"
 
